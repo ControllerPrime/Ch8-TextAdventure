@@ -14,12 +14,20 @@
  * @author  Michael Kölling and David J. Barnes
  * @version 2011.08.10
  */
+import java.util.Stack;
 
 public class Game 
 {
     private Parser parser;
     private Room currentRoom;
-        
+    
+    //*************************************************************************
+    // keep track of last direction so we can go BACK
+    //*************************************************************************
+    Stack<String> history = new Stack<>();
+    private String lastDirection = "";
+
+    
     /**
      * Create the game and initialise its internal map.
      */
@@ -29,33 +37,72 @@ public class Game
         parser = new Parser();
     }
 
-    /**
+    /**************************************************************************************
      * Create all the rooms and link their exits together.
      */
     private void createRooms()
     {
-        Room outside, theater, pub, lab, office;
+        Room outside, room_a, room_b, room_c, room_d, room_e, room_f, room_g, room_h, room_i, room_j, room_k;
       
         // create the rooms
-        outside = new Room("outside the main entrance of the university");
-        theater = new Room("in a lecture theater");
-        pub = new Room("in the campus pub");
-        lab = new Room("in a computing lab");
-        office = new Room("in the computing admin office");
+        outside = new Room("outside the main entrance of the structure");
+        room_a = new Room("Room A");
+        room_b = new Room("Room B");
+        room_c = new Room("Room C");
+        room_d = new Room("Room D");
+        room_e = new Room("Room E");
+        room_f = new Room("Room F");
+        room_g = new Room("Room G");
+        room_h = new Room("Room H");
+        room_i = new Room("Room I");
+        room_j = new Room("Room J");
+        room_k = new Room("Room K");
         
         // initialise room exits
-        outside.setExit("east", theater);
-        outside.setExit("south", lab);
-        outside.setExit("west", pub);
+        outside.setExit("east", room_b);
+        outside.setExit("west", room_a);
+        outside.setItem("Small black meteorite", 0.5);
+        
+        room_a.setExit("east", outside);
+        room_a.setExit("south", room_d);
+        room_a.setItem("gold coin", 0.25);
+        room_a.setItem("Rusty battle sword", 12.0);
+        
+        room_b.setExit("west", outside);
+        room_b.setExit("east", room_c);
+        room_b.setItem("Dusty book", 2.25);
 
-        theater.setExit("west", outside);
+        room_c.setExit("west", room_b);
+        room_c.setExit("south", room_g);
+        room_c.setItem("Nasty-looking potion", 0.5);
 
-        pub.setExit("east", outside);
+        room_d.setExit("north", room_a);
+        room_d.setExit("south", room_h);
+        room_d.setItem("Nepalese Kukri", 1.75);
 
-        lab.setExit("north", outside);
-        lab.setExit("east", office);
+        room_e.setExit("south", room_i);
+        room_e.setItem("IT'S ZUUL! RUN!", 999.0);
 
-        office.setExit("west", lab);
+        room_f.setExit("east", room_g);
+        room_f.setExit("south", room_j);
+        room_f.setItem("Giant poisonous scorpion", 4.5);
+
+        room_g.setExit("north", room_c);
+        room_g.setExit("west", room_f);
+        room_g.setExit("south", room_k);
+        room_g.setItem("Roman shield", 10.0);
+
+        room_h.setExit("north", room_d);
+        room_h.setExit("east", room_i);
+        room_h.setItem("Amulet of Protection", 0.75);
+
+        room_i.setExit("west", room_h);
+        room_i.setExit("north", room_e);
+
+        room_j.setExit("north", room_f);
+        room_j.setItem("Hazy crystal ball", 4.25);
+
+        room_k.setExit("north", room_g);
 
         currentRoom = outside;  // start game outside
     }
@@ -110,10 +157,54 @@ public class Game
             case HELP:
                 printHelp();
                 break;
+                
+            case LOOK:
+                look();
+                break;
+                
+            //***************************************************************
+            // process BACK command
+            // look at the last direction and go the other way
+            //***************************************************************
+            case BACK:
+                Room nextRoom;
+                
+                //***********************************************
+                // get lastDirection from history Stack
+                //***********************************************
+                lastDirection = historyPop();
+                switch (lastDirection) {
+                    case "north":
+                        nextRoom = currentRoom.getExit("south");
+                        currentRoom = nextRoom;
+                    break;
+                    case "east":
+                        nextRoom = currentRoom.getExit("west");
+                        currentRoom = nextRoom;
+                    break;
+                    case "south":
+                        nextRoom = currentRoom.getExit("north");
+                        currentRoom = nextRoom;
+                    break;
+                    case "west":
+                        nextRoom = currentRoom.getExit("east");
+                        currentRoom = nextRoom;
+                    break;
+                    // if lastDirection was NOT one of the four above, we have no place to go back to
+                    default:
+                        System.out.println("This is your starting position so you can't go back.");
+                    break;
+                }
+                System.out.println(currentRoom.getLongDescription());
+                break;
 
             case GO:
                 goRoom(command);
                 break;
+                
+            case EAT:
+                System.out.println("Yumm! You are no longer hungry.");
+                break;    
 
             case QUIT:
                 wantToQuit = quit(command);
@@ -123,6 +214,15 @@ public class Game
     }
 
     // implementations of user commands:
+    
+    /***********************************************************************
+     * LOOK command
+     * return long description of room
+     */
+    private void look()
+    {
+        System.out.println(currentRoom.getLongDescription());
+    }
 
     /**
      * Print out some help information.
@@ -134,7 +234,7 @@ public class Game
         System.out.println("You are lost. You are alone. You wander");
         System.out.println("around at the university.");
         System.out.println();
-        System.out.println("Your command words are:");
+        System.out.print("Your command words are: ");
         parser.showCommands();
     }
 
@@ -161,6 +261,12 @@ public class Game
         else {
             currentRoom = nextRoom;
             System.out.println(currentRoom.getLongDescription());
+            
+            //*************************************************************
+            // remember last direction moved for BACK command
+            //*************************************************************
+            lastDirection = direction;
+            historyPush(lastDirection);
         }
     }
 
@@ -178,5 +284,27 @@ public class Game
         else {
             return true;  // signal that we want to quit
         }
+    }
+    
+    //******************************************************************
+    // manage direction history in Stack
+    // historyPush records the last direction on top of Stack
+    // historyPop returns the last direction from the top of Stack
+    //******************************************************************
+    private void historyPush(String direction) {
+            history.push(direction);
+        }
+        private String historyPop() {
+        if(history.empty()) {
+            return("");
+        }
+        else {
+            return(history.pop());
+        }
+    }
+    
+    public static void main() {
+        Game thisGame = new Game();
+        thisGame.play();
     }
 }

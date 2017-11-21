@@ -20,10 +20,11 @@ public class Room
 {
     private String description;
     private HashMap<String, Room> exits;        // stores exits of this room.
+    private HashMap<String, Double> items;        // stores items of this room.
 
     /**
      * Create a room described "description". Initially, it has
-     * no exits. "description" is something like "a kitchen" or
+     * no exits and no items. "description" is something like "a kitchen" or
      * "an open court yard".
      * @param description The room's description.
      */
@@ -31,6 +32,7 @@ public class Room
     {
         this.description = description;
         exits = new HashMap<String, Room>();
+        items = new HashMap<String, Double>();
     }
 
     /**
@@ -41,6 +43,14 @@ public class Room
     public void setExit(String direction, Room neighbor) 
     {
         exits.put(direction, neighbor);
+    }
+    
+    /**
+     * Define an item in this room.
+     */
+    public void setItem(String description, Double weight) 
+    {
+        items.put(description, weight);
     }
 
     /**
@@ -60,7 +70,7 @@ public class Room
      */
     public String getLongDescription()
     {
-        return "You are " + description + ".\n" + getExitString();
+        return "You are " + description + ".\n" + getItemString() + "\n" + getExitString();        
     }
 
     /**
@@ -74,6 +84,25 @@ public class Room
         Set<String> keys = exits.keySet();
         for(String exit : keys) {
             returnString += " " + exit;
+        }
+        return returnString;
+    }
+    
+    /**
+     * Return a string describing the room's items.
+     * @return Details of the room's items.
+     */
+    private String getItemString()
+    {
+        String returnString = "Items:";
+        Set<String> keys = items.keySet();
+        for(String item : keys) {
+            //*************************************************************
+            // get item weight and a String version
+            //*************************************************************
+            Double itemWeight = items.get(item);
+            String weight = itemWeight.toString();
+            returnString += " " + item + "(" + weight + " lbs)";
         }
         return returnString;
     }
